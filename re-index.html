@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bitácora Emocional Móvil</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 10px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        /* 🛠️ CONTENEDOR ESTÁTICO Y PERFECTAMENTE CENTRADO */
+        /* 🛠️ CONTENEDOR MÁS GRANDE Y SIN BORDES BLANCOS */
+        .rueda-wrapper {
+            width: 100%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 10px; /* Reducimos el padding para que la rueda ocupe más espacio */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .rueda-container {
+            position: relative;
+            width: 100%;
+            max-width: 420px; /* Aumentamos el tamaño máximo para que se vea mucho más grande */
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            background: transparent; /* Quitamos el fondo blanco para evitar halos feos */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .rueda-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            
+            /* 🎛️ LA SOLUCIÓN: Ajustamos la posición interna de la foto.
+            El primer valor es el eje X (horizontal 50% = centro).
+            El segundo valor es el eje Y (vertical). Al subirlo de 50% a 53%, 
+            empujamos la imagen un poquito hacia abajo dentro de su máscara circular. */
+            object-position: 50% 35%; 
+            
+            transform: scale(1.08); 
+            border-radius: 50%;
+            display: block;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Ajuste sutil para que el filtro de luz siga el nuevo tamaño */
+        .highlight-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2;
+            
+            /* 🎛️ CALIBRACIÓN DEL CENTRO DE LA LUZ: 
+            Si la punta de la luz no calza con el centro blanco de tu rueda, 
+            modifica estos porcentajes (ej: 49% o 51%) hasta que encaje perfecto. */
+            --cx: 50%; 
+            --cy: 50%;
+            
+            background: conic-gradient(
+                from var(--start-angle, 0deg) at var(--cx) var(--cy),
+                var(--glow-color, transparent) 0deg,
+                var(--glow-color, transparent) var(--span-angle, 0deg),
+                transparent var(--span-angle, 0deg)
+            );
+            mix-blend-mode: hard-light;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            transform: scale(1.08); 
+        }
+
+        .highlight-overlay.active {
+            opacity: 0.65;
+        }
+
+        /* Teclado Táctil */
+        .flow-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .step-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .btn-emotion {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 12px 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 48px;
+        }
+
+        .btn-emotion:active { transform: scale(0.95); }
+
+        .btn-emotion.selected {
+            background: var(--selected-color, #3498db);
+            border-color: transparent;
+            box-shadow: 0 0 15px var(--selected-color);
+            color: #000;
+            font-weight: 700;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            resize: none;
+            height: 80px;
+            outline: none;
+        }
+
+        textarea:focus { border-color: #6366f1; }
+
+        .btn-submit {
+            background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease forwards; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #status-bar { text-align: center; font-size: 0.85rem; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Bitácora Emocional</h1>
+    </header>
+
+    <div class="rueda-wrapper">
+        <div class="rueda-container">
+            <img src="rueda.png" alt="Rueda" class="rueda-img">
+            <div id="highlight-overlay" class="highlight-overlay"></div>
+        </div>
+    </div>
+
+    <div class="flow-container">
+        <div id="step1-container">
+            <div class="step-title">1. Emoción Primitiva (Centro)</div>
+            <div class="options-grid" id="grid-primitivas"></div>
+        </div>
+
+        <div id="step2-container" style="display: none;">
+            <div class="step-title">2. Emoción Secundaria</div>
+            <div class="options-grid" id="grid-secundarias"></div>
+        </div>
+
+        <div id="step3-container" style="display: none;">
+            <div class="step-title">3. Emoción Compleja (Exterior)</div>
+            <div class="options-grid" id="grid-complejas"></div>
+        </div>
+
+        <div id="final-container" style="display: none;" class="input-group">
+            <div class="step-title">Contexto & Notas</div>
+            <textarea id="comentario" placeholder="¿Qué gatilló esta emoción?"></textarea>
+            <button id="btnGuardar" class="btn-submit">Registrar en Bitácora</button>
+        </div>
+        
+        <div id="status-bar"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+    apiKey: "AIzaSyCROxYIt3dAtQWhqjc5iS2smmNOWitUGi8",
+    authDomain: "rueda-emociones.firebaseapp.com",
+    projectId: "rueda-emociones",
+    storageBucket: "rueda-emociones.firebasestorage.app",
+    messagingSenderId: "313945631905",
+    appId: "1:313945631905:web:f34ea44cad794bd1cb14e0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    /* 🛠️ CONFIGURACIÓN DE ÁNGULOS (Grados)
+       Como la imagen es fija, necesitamos decirle al CSS dónde empieza cada color.
+       Si el resalte no encaja perfecto con tu imagen, solo ajusta el 'startAngle'.
+       (0deg es a las 12 en punto, girando como las agujas del reloj)
+    */
+    const datosRueda = {
+            // Ira está centrada arriba. Empieza en -30° (330°) y abarca 60°
+            "Ira": { color: "#ff7675", startAngle: 330, spanAngle: 60, secundarias: {
+                "Amenazado": ["Inseguro", "Celoso"], "Odioso": ["Resentido", "Violado"],
+                "Desquiciado": ["Enfurecido", "Rabioso"], "Agresivo": ["Provocado", "Hostil"],
+                "Frustrado": ["Enfadado", "Irritado"], "Distante": ["Retraído", "Sospechoso"],
+                "Crítico": ["Sarcástico", "Escéptico"]
+            }},
+            "Disgusto": { color: "#e67e22", startAngle: 30, spanAngle: 60, secundarias: {
+                "Desaprobado": ["Sentencioso", "Aborrecido"], "Decepcionado": ["Repugnante", "Rebelado"],
+                "Terrible": ["Repulsivo", "Detestable"], "Evasivo": ["Aversivo", "Indeciso"]
+            }},
+            "Tristeza": { color: "#2ecc71", startAngle: 90, spanAngle: 60, secundarias: {
+                "Culpable": ["Atormentado", "Avergonzado"], "Ansioso": ["Anhelante", "Abrumado"],
+                "Abandonado": ["Ignorado", "Discriminado"], "Desesperado": ["Impotente", "Vulnerable"],
+                "Deprimido": ["Inferior", "Vacío"], "Solitario": ["Abandonado", "Apartado"],
+                "Aburrido": ["Apático", "Indiferente"]
+            }},
+            "Felicidad": { color: "#f1c40f", startAngle: 150, spanAngle: 60, secundarias: {
+                "Optimista": ["Inspirado", "Receptivo"], "Íntimo": ["Juguetón", "Sensible"],
+                "Pacífico": ["Esperanzado", "Amoroso"], "Poderoso": ["Valiente", "Provocativo"],
+                "Aceptado": ["Respetado", "Realizado"], "Orgulloso": ["Confiado", "Importante"]
+            }},
+            "Sorpresa": { color: "#2980b9", startAngle: 210, spanAngle: 60, secundarias: {
+                "Jubiloso": ["Liberado", "Eufórico"], "Efusivo": ["Enérgico", "Inquieto"],
+                "Asombrado": ["Pasmado", "Atónito"], "Confundido": ["Perplejo", "Desilusionado"],
+                "Sorprendido": ["Consternado", "Impresionado"], "Interesado": ["Curioso", "Entretenido"]
+            }},
+            "Miedo": { color: "#6c5ce7", startAngle: 270, spanAngle: 60, secundarias: {
+                "Asustado": ["Espantado", "Aterrado"], "Inseguro": ["Inferior", "Pobre"],
+                "Sumiso": ["Insignificante", "Indignado"], "Rechazado": ["Inadecuado", "Perturbado"],
+                "Humillado": ["Irrespetado", "Ridiculizado"], "Herido": ["Apenado", "Devastado"]
+            }}
+        };
+
+    let seleccion = { primitiva: '', secundaria: '', compleja: '' };
+    const highlightOverlay = document.getElementById('highlight-overlay');
+    const statusBar = document.getElementById('status-bar');
+
+    function init() {
+        const grid1 = document.getElementById('grid-primitivas');
+        Object.keys(datosRueda).forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-emotion';
+            btn.type = 'button';
+            btn.textContent = p;
+            btn.style.setProperty('--selected-color', datosRueda[p].color);
+            btn.addEventListener('click', () => seleccionarPrimitiva(p, btn));
+            grid1.appendChild(btn);
+        });
+    }
+
+    function seleccionarPrimitiva(emocion, elemento) {
+        seleccion.primitiva = emocion;
+        seleccion.secundaria = '';
+        seleccion.compleja = '';
+        
+        // Pinta el resalte en la rueda estática
+        highlightOverlay.style.setProperty('--start-angle', `${datosRueda[emocion].startAngle}deg`);
+        highlightOverlay.style.setProperty('--span-angle', `${datosRueda[emocion].spanAngle}deg`);
+        highlightOverlay.style.setProperty('--glow-color', datosRueda[emocion].color);
+        highlightOverlay.classList.add('active');
+
+        destacarBoton('grid-primitivas', elemento);
+        
+        const grid2 = document.getElementById('grid-secundarias');
+        grid2.innerHTML = '';
+        Object.keys(datosRueda[emocion].secundarias).forEach(s => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-emotion';
+            btn.type = 'button';
+            btn.textContent = s;
+            btn.style.setProperty('--selected-color', datosRueda[emocion].color);
+            btn.addEventListener('click', () => seleccionarSecundaria(s, btn));
+            grid2.appendChild(btn);
+        });
+
+        mostrarContenedor('step2-container');
+        ocultarContenedor('step3-container');
+        ocultarContenedor('final-container');
+    }
+
+    function seleccionarSecundaria(emocion, elemento) {
+        seleccion.secundaria = emocion;
+        seleccion.compleja = '';
+        destacarBoton('grid-secundarias', elemento);
+
+        const grid3 = document.getElementById('grid-complejas');
+        grid3.innerHTML = '';
+        const listaComplejas = datosRueda[seleccion.primitiva].secundarias[emocion];
+        
+        listaComplejas.forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-emotion';
+            btn.type = 'button';
+            btn.textContent = c;
+            btn.style.setProperty('--selected-color', datosRueda[seleccion.primitiva].color);
+            btn.addEventListener('click', () => seleccionarCompleja(c, btn));
+            grid3.appendChild(btn);
+        });
+
+        mostrarContenedor('step3-container');
+        ocultarContenedor('final-container');
+    }
+
+    function seleccionarCompleja(emocion, elemento) {
+        seleccion.compleja = emocion;
+        destacarBoton('grid-complejas', elemento);
+        mostrarContenedor('final-container');
+        
+        setTimeout(() => {
+            document.getElementById('final-container').scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+    }
+
+    function destacarBoton(containerId, elementoActivo) {
+        document.querySelectorAll(`#${containerId} .btn-emotion`).forEach(b => b.classList.remove('selected'));
+        elementoActivo.classList.add('selected');
+    }
+
+    function mostrarContenedor(id) {
+        const el = document.getElementById(id);
+        el.style.display = 'block';
+        el.classList.add('fade-in');
+    }
+
+    function ocultarContenedor(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+        document.getElementById('btnGuardar').addEventListener('click', async () => {
+            const comentario = document.getElementById('comentario').value;
+            statusBar.textContent = "Guardando en Firebase...";
+            statusBar.style.color = "#f8fafc";
+
+            try {
+                await addDoc(collection(db, "posteos"), {
+                    ...seleccion,
+                    comentario: comentario,
+                    fecha_registro: serverTimestamp()
+                });
+
+                statusBar.textContent = "¡Registro guardado con éxito! ✨";
+                statusBar.style.color = "#2ecc71";
+                
+                setTimeout(() => { location.reload(); }, 1800);
+            } catch (error) {
+                console.error("Error capturado:", error);
+                // 🪄 ESTA LÍNEA TE MOSTRARÁ EL ERROR REAL EN LA PANTALLA:
+                statusBar.textContent = "Error: " + error.code + " - " + error.message;
+                statusBar.style.color = "#ff7675";
+            }
+        });
+    init();
+</script>
+</body>
+</html>
