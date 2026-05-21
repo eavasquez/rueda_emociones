@@ -258,6 +258,7 @@
 <script type="module">
     // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
   // TODO: Add SDKs for Firebase products that you want to use
   // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -273,6 +274,7 @@
 
       // Initialize Firebase
     const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     /* 🛠️ CONFIGURACIÓN DE ÁNGULOS (Grados)
        Como la imagen es fija, necesitamos decirle al CSS dónde empieza cada color.
