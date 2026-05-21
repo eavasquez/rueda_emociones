@@ -256,18 +256,22 @@
 </div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
+  // Your web app's Firebase configuration
     const firebaseConfig = {
-    apiKey: "AIzaSyCROxYIt3dAtQWhqjc5iS2smmNOWitUGi8",
-    authDomain: "rueda-emociones.firebaseapp.com",
-    projectId: "rueda-emociones",
-    storageBucket: "rueda-emociones.firebasestorage.app",
-    messagingSenderId: "313945631905",
-    appId: "1:313945631905:web:f34ea44cad794bd1cb14e0"
+        apiKey: "AIzaSyCtC6u9dzbG7x-U9aLEFHyaK1Yn1I6oJ5c",
+        authDomain: "rueda-emociones-dbcfc.firebaseapp.com",
+        projectId: "rueda-emociones-dbcfc",
+        storageBucket: "rueda-emociones-dbcfc.firebasestorage.app",
+        messagingSenderId: "277483824661",
+        appId: "1:277483824661:web:dfccd0a8d89943bfcc101c"
     };
 
+      // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
